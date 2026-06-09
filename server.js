@@ -372,7 +372,7 @@ app.post('/api/import/csv', upload.single('file'), (req, res) => {
   let records;
   try {
     records = parse(req.file.buffer.toString('utf8'), {
-      columns: true,
+      columns: header => header.map(h => String(h).trim().toLowerCase()),
       skip_empty_lines: true,
       trim: true,
     });
@@ -393,7 +393,8 @@ app.post('/api/import/csv', upload.single('file'), (req, res) => {
       const title = (row.title || '').trim();
       if (!title) continue;
 
-      const type = VALID_TYPES.has(row.type) ? row.type : 'other';
+      const rawType = String(row.type || '').trim().toLowerCase();
+      const type = VALID_TYPES.has(rawType) ? rawType : 'other';
       const rating = row.rating ? parseInt(row.rating, 10) : null;
 
       stmt.run(
@@ -409,7 +410,7 @@ app.post('/api/import/csv', upload.single('file'), (req, res) => {
         row.format || '',
         rating && rating >= 1 && rating <= 5 ? rating : null,
         row.notes || '',
-        row.status || 'owned',
+        String(row.status || 'owned').trim().toLowerCase() || 'owned',
       );
       imported++;
     }
